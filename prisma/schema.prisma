@@ -1,0 +1,183 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Enum pour les rôles
+enum Role {
+  CITOYEN
+  ADMIN
+  SUPER_ADMIN
+}
+
+// Enum pour les statuts de demande
+enum StatutDemande {
+  BROUILLON
+  SOUMISE
+  RECUE
+  EN_TRAITEMENT
+  ACCEPTEE
+  REFUSEE
+  ANNULEE
+}
+
+// Enum pour l'urgence
+enum Urgence {
+  FAIBLE
+  NORMALE
+  ELEVEE
+  CRITIQUE
+}
+
+// Table des utilisateurs
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  nom       String
+  prenom    String
+  telephone String?
+  role      Role     @default(CITOYEN)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  demandes             DemandeAudience[]
+  administrationsCrees Administration[]      @relation("CreatedByUser")
+  adminAdministrations AdminAdministration[]
+  traitements          Traitement[]
+  activityLogs         ActivityLog[]
+  platformSettings     PlatformSetting[]
+}
+
+// Table des administrations
+model Administration {
+  id          String   @id @default(uuid())
+  nom         String
+  description String?
+  adresse     String
+  email       String
+  telephone   String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String
+  createdBy   User     @relation("CreatedByUser", fields: [createdById], references: [id])
+
+  // Relations
+  demandes DemandeAudience[]
+  admins   AdminAdministration[]
+}
+
+// Table de liaison Admin <-> Administration
+model AdminAdministration {
+  id               String   @id @default(uuid())
+  userId           String
+  administrationId String
+  createdAt        DateTime @default(now())
+
+  user           User           @relation(fields: [userId], references: [id])
+  administration Administration @relation(fields: [administrationId], references: [id])
+
+  @@unique([userId, administrationId])
+}
+
+// Table des demandes d'audience
+model DemandeAudience {
+  id               String        @id @default(uuid())
+  userId           String
+  administrationId String
+  objet            String
+  description      String        @db.Text
+  dateSouhaitee    DateTime?
+  statut           StatutDemande @default(BROUILLON)
+  urgence          Urgence       @default(NORMALE)
+  numeroReference  String        @unique @default(cuid())
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  // Relations
+  user            User             @relation(fields: [userId], references: [id])
+  administration  Administration   @relation(fields: [administrationId], references: [id])
+  accuseReception AccuseReception?
+  traitement      Traitement?
+  documents       Document[]
+}
+
+// Table des accusés de réception
+model AccuseReception {
+  id                     String   @id @default(uuid())
+  demandeId              String   @unique
+  dateAccuse             DateTime @default(now())
+  reference              String   @unique
+  generatedAutomatically Boolean  @default(true)
+
+  demande DemandeAudience @relation(fields: [demandeId], references: [id])
+}
+
+// Table des traitements
+model Traitement {
+  id                String    @id @default(uuid())
+  demandeId         String    @unique
+  treatedById       String
+  decision          String // ACCEPTEE, REFUSEE, EN_ATTENTE
+  dateDecision      DateTime  @default(now())
+  commentaire       String?   @db.Text
+  dateAudienceFixee DateTime?
+  lieuAudience      String?
+
+  demande   DemandeAudience @relation(fields: [demandeId], references: [id])
+  treatedBy User            @relation(fields: [treatedById], references: [id])
+}
+
+// Table des documents attachés
+model Document {
+  id         String   @id @default(uuid())
+  demandeId  String
+  nom        String
+  url        String
+  taille     Int // en bytes
+  type       String // mime type
+  uploadedAt DateTime @default(now())
+
+  demande DemandeAudience @relation(fields: [demandeId], references: [id])
+}
+
+// Table des paramètres de la plateforme
+model PlatformSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String   @db.Text
+  description String?
+  updatedById String
+  updatedAt   DateTime @updatedAt
+
+  updatedBy User @relation(fields: [updatedById], references: [id])
+}
+
+// Table des logs d'activité
+model ActivityLog {
+  id         String   @id @default(uuid())
+  userId     String
+  action     String
+  entityType String?
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
