@@ -1,13 +1,6 @@
 // src/components/auth/register-form.tsx
 "use client"
 
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2 } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import * as z from 'zod'
-
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -18,66 +11,15 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { useAuth } from '@/hooks/useAuth'
-import { toast } from 'sonner'
+import useRegisterForm from '@/hooks/useRegisterForm'
+import { Loader2 } from 'lucide-react'
 
-const registerSchema = z.object({
-  email: z.string().email('Email invalide'),
-  password: z.string().min(6, 'Le mot de passe doit contenir au moins 6 caractères'),
-  confirmPassword: z.string(),
-  nom: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
-  prenom: z.string().min(2, 'Le prénom doit contenir au moins 2 caractères'),
-  telephone: z.string().optional(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Les mots de passe ne correspondent pas",
-  path: ["confirmPassword"],
-})
 
-type RegisterFormData = z.infer<typeof registerSchema>
 
 export function RegisterForm() {
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
-  const { signUp } = useAuth()
-  // const { toast } = useToast()
 
-  const form = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-      confirmPassword: '',
-      nom: '',
-      prenom: '',
-      telephone: '',
-    },
-  })
-
-  const onSubmit = async (data: RegisterFormData) => {
-    setIsLoading(true)
-
-    try {
-      const { error } = await signUp(data.email, data.password, {
-        nom: data.nom,
-        prenom: data.prenom,
-        telephone: data.telephone,
-      })
-
-      if (error) {
-        toast("Erreur d'inscription")
-      } else {
-        toast("Inscription réussie")
-
-        // Rediriger vers la page de connexion
-        router.push('/auth/login')
-      }
-    } catch (error) {
-      toast("Erreur")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
+  const { form, isLoading, onSubmit } = useRegisterForm();
+  
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -147,7 +89,7 @@ export function RegisterForm() {
               <FormControl>
                 <Input
                   type="tel"
-                  placeholder="06 12 34 56 78"
+                  placeholder="077 29 94 03"
                   {...field}
                   disabled={isLoading}
                 />

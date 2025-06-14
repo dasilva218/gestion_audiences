@@ -1,10 +1,10 @@
 
 // src/hooks/useAuth.ts
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { User as SupabaseUser } from '@supabase/supabase-js'
 import { Role, User } from '@/types'
+import { User as SupabaseUser } from '@supabase/supabase-js'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 // import { User, Role } from '@prisma/client'
 
 interface AuthState {

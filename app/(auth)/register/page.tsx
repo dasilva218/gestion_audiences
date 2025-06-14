@@ -1,4 +1,4 @@
-// src/app/(auth)/register/page.tsx
+//app/(auth)/register/page.tsx
 import Link from 'next/link'
 import { RegisterForm } from '@/components/auth/register-form'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -21,7 +21,7 @@ export default function RegisterPage() {
         <CardFooter className="flex flex-col space-y-2">
           <div className="text-sm text-gray-600 text-center">
             Déjà un compte ?{' '}
-            <Link href="/auth/login" className="text-blue-600 hover:underline">
+            <Link href="/login" className="text-blue-600 hover:underline">
               Connectez-vous
             </Link>
           </div>
