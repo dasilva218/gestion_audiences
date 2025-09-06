@@ -1,16 +1,22 @@
-
 // src/hooks/useAuth.ts
-import { createClient } from '@/lib/supabase/client'
+import { supabaseClient } from '@/lib/supabase/client'
 import { Role, User } from '@/types'
 import { User as SupabaseUser } from '@supabase/supabase-js'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
-// import { User, Role } from '@prisma/client'
+
 
 interface AuthState {
   user: SupabaseUser | null
   profile: User | null
   loading: boolean
+}
+
+// Routes par défaut selon le rôle
+const DEFAULT_ROUTES = {
+  [Role.CITOYEN]: '/dashboard',
+  [Role.ADMIN]: '/admin/dashboard',
+  [Role.SUPER_ADMIN]: '/super-admin/dashboard',
 }
 
 export function useAuth() {
@@ -20,16 +26,17 @@ export function useAuth() {
     loading: true,
   })
   const router = useRouter()
-  const supabase = createClient()
+  const searchParams = useSearchParams()
+
 
   useEffect(() => {
     // Vérifier la session actuelle
     const checkSession = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser()
-        
+        const { data: { user } } = await supabaseClient.auth.getUser()
+
         if (user) {
-          const { data: profile } = await supabase
+          const { data: profile } = await supabaseClient
             .from('User')
             .select('*')
             .eq('id', user.id)
@@ -48,10 +55,10 @@ export function useAuth() {
     checkSession()
 
     // Écouter les changements d'authentification
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
       async (event, session) => {
         if (session?.user) {
-          const { data: profile } = await supabase
+          const { data: profile } = await supabaseClient
             .from('User')
             .select('*')
             .eq('id', session.user.id)
@@ -62,8 +69,21 @@ export function useAuth() {
             profile, 
             loading: false 
           })
+
+          // Redirection après connexion
+          if (event === 'SIGNED_IN' && profile) {
+            const redirectTo = searchParams.get('redirectTo')
+            console.log(redirectTo);
+            const defaultRoute = DEFAULT_ROUTES[profile.role as Role]
+            router.push(redirectTo || defaultRoute)
+          }
         } else {
           setAuthState({ user: null, profile: null, loading: false })
+          
+          // Redirection après déconnexion
+          if (event === 'SIGNED_OUT') {
+            router.push('/auth/login')
+          }
         }
       }
     )
@@ -71,13 +91,19 @@ export function useAuth() {
     return () => {
       subscription.unsubscribe()
     }
-  }, [supabase, router])
+  }, [supabaseClient, router, searchParams])
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
       email,
       password,
     })
+    
+    if (!error && data.user) {
+      // La redirection sera gérée par onAuthStateChange
+      router.refresh()
+    }
+    
     return { data, error }
   }
 
@@ -86,7 +112,7 @@ export function useAuth() {
     password: string, 
     metadata: { nom: string; prenom: string; telephone?: string }
   ) => {
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await supabaseClient.auth.signUp({
       email,
       password,
       options: {
@@ -97,11 +123,14 @@ export function useAuth() {
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (!error) {
-      router.push('/auth/login')
-    }
+    const { error } = await supabaseClient.auth.signOut()
+    // La redirection sera gérée par onAuthStateChange
     return { error }
+  }
+
+  const getDefaultRoute = () => {
+    if (!authState.profile) return '/auth/login'
+    return DEFAULT_ROUTES[authState.profile.role as Role]
   }
 
   const isAdmin = () => {
@@ -113,6 +142,10 @@ export function useAuth() {
     return authState.profile?.role === Role.SUPER_ADMIN
   }
 
+  const hasRole = (role: Role) => {
+    return authState.profile?.role === role
+  }
+
   return {
     ...authState,
     signIn,
@@ -120,5 +153,7 @@ export function useAuth() {
     signOut,
     isAdmin,
     isSuperAdmin,
+    hasRole,
+    getDefaultRoute,
   }
 }

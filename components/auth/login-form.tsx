@@ -3,7 +3,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
@@ -29,6 +29,7 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>
 
 export function LoginForm() {
+  const redirectTo = useSearchParams().get('redirectTo')
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const { signIn } = useAuth()
@@ -51,10 +52,12 @@ export function LoginForm() {
       if (error) {
         toast('Erreur de connexion')
       } else {
-        toast('Connexion réussie')
+        toast('Connexion réussie', {
+          description: 'Redirection en cours...',
+        })
 
         // La redirection sera gérée par le middleware
-        router.refresh()
+        // router.refresh()
       }
     } catch (error) {
       toast('Erreur')

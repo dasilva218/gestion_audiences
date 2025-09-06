@@ -1,6 +1,4 @@
-// src/components/auth/register-form.tsx
 "use client"
-
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -14,12 +12,10 @@ import { Input } from '@/components/ui/input'
 import useRegisterForm from '@/hooks/useRegisterForm'
 import { Loader2 } from 'lucide-react'
 
-
-
 export function RegisterForm() {
 
   const { form, isLoading, onSubmit } = useRegisterForm();
-  
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

@@ -72,7 +72,7 @@ export default function HomePage() {
               mounted && "animate-in fade-in-0 slide-in-from-bottom-4 duration-700 delay-500"
             )}>
               <Button size="lg" className="text-lg px-8" asChild>
-                <Link href="/auth/register">
+                <Link href="/register">
                   Commencer maintenant
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
@@ -179,7 +179,7 @@ export default function HomePage() {
 
           <div className="text-center mt-12">
             <Button size="lg" asChild>
-              <Link href="/auth/register">
+              <Link href="/register">
                 Commencer ma demande
                 <ChevronRight className="ml-2 h-5 w-5" />
               </Link>
@@ -265,7 +265,7 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" variant="secondary" asChild>
-              <Link href="/auth/register">
+              <Link href="/register">
                 Créer mon compte gratuitement
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
